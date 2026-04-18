@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Spotify · Xeneon Widget</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* Spotify widget · xeneon-widgets · black + white aesthetic, Spotify-green accent */
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#0a0a0a; --card:#141414; --card-2:#1a1a1a;
+    --ink:#f5f5f5; --ink-dim:rgba(245,245,245,.55); --ink-faint:rgba(245,245,245,.12);
+    --green:#1DB954;  /* Spotify's green, used sparingly */
+    --sans:"Archivo",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
+  }
+  html,body{width:100%;height:100%;background:var(--bg);color:var(--ink);font-family:var(--sans);overflow:hidden}
+  a{color:inherit}
+
+  /* layout */
+  .shell{width:100%;height:100%;display:grid;grid-template-columns:auto 1fr;gap:3vmin;padding:3vmin;align-items:center}
+  @media (max-aspect-ratio:4/3){.shell{grid-template-columns:1fr;grid-template-rows:auto 1fr}}
+
+  /* art */
+  .art{
+    aspect-ratio:1;
+    width:min(40vh,40vw);
+    background:#111 center/cover no-repeat;
+    box-shadow:0 0 0 1px var(--ink-faint), 0 25px 60px rgba(0,0,0,.7);
+    border-radius:4px;
+    position:relative;
+    overflow:hidden;
+  }
+  .art::after{
+    content:"";position:absolute;inset:0;
+    background:linear-gradient(180deg,transparent 60%,rgba(0,0,0,.55) 100%);
+  }
+
+  /* text column */
+  .meta{display:flex;flex-direction:column;gap:1.2vmin;min-width:0}
+  .kicker{font-family:var(--mono);font-size:clamp(10px,1.2vmin,14px);letter-spacing:.22em;color:var(--green);text-transform:uppercase}
+  .track{
+    font-family:var(--sans);font-weight:900;
+    font-size:clamp(20px,4.6vmin,56px);line-height:.95;letter-spacing:-.02em;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .artist{
+    font-family:var(--sans);font-weight:500;
+    font-size:clamp(14px,2.4vmin,24px);color:#bbb;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .album{
+    font-family:var(--mono);font-size:clamp(9px,1.2vmin,13px);
+    color:var(--ink-dim);letter-spacing:.08em;text-transform:uppercase;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+
+  /* progress */
+  .bar{height:3px;background:var(--ink-faint);border-radius:2px;overflow:hidden;margin-top:1vmin}
+  .bar i{display:block;height:100%;background:var(--green);width:0;transition:width .6s linear}
+  .times{display:flex;justify-content:space-between;font-family:var(--mono);font-size:clamp(9px,1.1vmin,12px);color:var(--ink-dim);margin-top:.5vmin}
+
+  /* controls */
+  .controls{display:flex;gap:2vmin;align-items:center;margin-top:1.5vmin}
+  .btn{
+    background:transparent;border:1px solid var(--ink-faint);color:var(--ink);
+    width:clamp(38px,6vmin,56px);height:clamp(38px,6vmin,56px);
+    border-radius:50%;cursor:pointer;display:grid;place-items:center;
+    font-size:clamp(16px,2.4vmin,22px);
+    transition:border-color .2s, background .2s, transform .2s;
+  }
+  .btn:hover{border-color:var(--ink);background:var(--card-2)}
+  .btn.play{background:var(--green);color:#000;border-color:var(--green);width:clamp(48px,7.5vmin,68px);height:clamp(48px,7.5vmin,68px);font-size:clamp(18px,2.8vmin,26px)}
+  .btn.play:hover{background:#1ed760;transform:scale(1.04)}
+  .device{font-family:var(--mono);font-size:clamp(9px,1.1vmin,12px);color:var(--ink-dim);letter-spacing:.12em;text-transform:uppercase;margin-left:auto}
+  .device .live::before{content:"● ";color:var(--green)}
+
+  /* login screen */
+  .login{
+    width:100%;height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;
+    padding:4vmin;text-align:center;gap:2vmin;
+  }
+  .login h1{font-family:var(--sans);font-weight:900;font-size:clamp(24px,5vmin,54px);letter-spacing:-.02em;line-height:1}
+  .login p{color:var(--ink-dim);max-width:60ch;font-size:clamp(12px,1.7vmin,18px);line-height:1.6}
+  .login code{background:var(--card-2);padding:.2em .5em;border-radius:3px;color:var(--green);font-family:var(--mono);font-size:.9em;word-break:break-all}
+  .login .cta{
+    background:var(--green);color:#000;border:0;
+    padding:1.2vmin 3vmin;font-family:var(--sans);font-weight:700;font-size:clamp(13px,1.9vmin,18px);
+    letter-spacing:.1em;text-transform:uppercase;cursor:pointer;border-radius:999px;margin-top:2vmin;
+    transition:background .2s, transform .2s;
+  }
+  .login .cta:hover{background:#1ed760;transform:translateY(-2px)}
+  .login .cta[disabled]{opacity:.4;cursor:not-allowed}
+  .login .steps{
+    background:var(--card);border:1px solid var(--ink-faint);border-radius:4px;
+    padding:2vmin 3vmin;text-align:left;max-width:760px;width:100%;
+  }
+  .login .steps ol{padding-left:1.5em;font-size:clamp(11px,1.5vmin,15px);line-height:1.9;color:#ccc}
+  .login .steps a{color:var(--green);text-decoration:underline}
+  .login input{
+    background:var(--card-2);border:1px solid var(--ink-faint);color:var(--ink);
+    padding:1.2vmin 1.6vmin;width:min(500px,90%);
+    font-family:var(--mono);font-size:clamp(12px,1.6vmin,15px);
+    border-radius:3px;margin-top:1vmin;outline:none;
+  }
+  .login input:focus{border-color:var(--green)}
+
+  /* error */
+  .err{position:absolute;top:1vmin;left:1vmin;right:1vmin;padding:1vmin 2vmin;
+       background:rgba(255,107,107,.15);border-left:3px solid #ff6b6b;
+       font-family:var(--mono);font-size:clamp(10px,1.2vmin,13px);color:#ff9b9b}
+
+  /* status footer */
+  .status{
+    position:absolute;bottom:1vmin;right:2vmin;
+    font-family:var(--mono);font-size:clamp(8px,.9vmin,11px);color:var(--ink-dim);letter-spacing:.1em;text-transform:uppercase;
+  }
+  .status a{color:var(--green);cursor:pointer;margin-left:1em}
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div class="login" id="login" hidden>
+  <h1>Spotify on Xeneon</h1>
+  <p>A real Spotify control widget for your Corsair Xeneon Edge. 2-minute setup — one-time.</p>
+
+  <div class="steps">
+    <p style="color:var(--green);font-family:var(--mono);letter-spacing:.2em;text-transform:uppercase;font-size:.85em;margin-bottom:1em">Setup</p>
+    <ol>
+      <li>Go to <a href="https://developer.spotify.com/dashboard" target="_blank">developer.spotify.com/dashboard</a> (free, uses your Spotify account)</li>
+      <li>Click <strong>Create app</strong> — name it anything (e.g. "Xeneon Widget")</li>
+      <li>Under <strong>Redirect URIs</strong>, add this exact URL: <br><code id="redirect-uri-echo">loading…</code></li>
+      <li>Under <strong>Which API/SDKs are you planning to use?</strong>, check <strong>Web API</strong></li>
+      <li>Save. Then copy your <strong>Client ID</strong> from the app settings.</li>
+      <li>Paste it here and click Connect:</li>
+    </ol>
+    <input type="text" id="client-id-input" placeholder="Paste Client ID here (looks like: 5f8a9b2c...)" />
+    <br><button class="cta" id="connect-btn" disabled>Connect to Spotify</button>
+  </div>
+  <p style="font-size:clamp(10px,1.3vmin,13px);color:var(--ink-dim);margin-top:2vmin">
+    You need a Spotify <strong style="color:var(--green)">Premium</strong> account to control playback.<br/>
+    Free accounts can see what's playing but can't play/pause/skip via the API.
+  </p>
+</div>
+
+<!-- PLAYER (hidden until authed) -->
+<div class="shell" id="player" hidden>
+  <div class="art" id="art"></div>
+  <div class="meta">
+    <span class="kicker" id="kicker">Not playing</span>
+    <span class="track" id="track">—</span>
+    <span class="artist" id="artist">—</span>
+    <span class="album" id="album">—</span>
+    <div class="bar"><i id="bar"></i></div>
+    <div class="times"><span id="t-cur">0:00</span><span id="t-tot">0:00</span></div>
+    <div class="controls">
+      <button class="btn" id="prev" title="Previous">⏮</button>
+      <button class="btn play" id="play" title="Play / Pause">▶</button>
+      <button class="btn" id="next" title="Next">⏭</button>
+      <span class="device"><span id="device-name" class="live">—</span></span>
+    </div>
+  </div>
+</div>
+
+<div class="err" id="err" hidden></div>
+<div class="status">
+  <span id="status-text">—</span>
+  <a id="logout-link" style="display:none">logout</a>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════
+   Spotify Widget — OAuth implicit grant + player controls
+   Stores token in localStorage. Polls /me/player every 4 seconds.
+   ══════════════════════════════════════════════════════════════════ */
+
+const SCOPES = [
+  "user-read-playback-state",
+  "user-modify-playback-state",
+  "user-read-currently-playing",
+].join(" ");
+
+const REDIRECT_URI = location.origin + location.pathname;   // must match Spotify app's allowed URI exactly
+const STORAGE = {
+  clientId: "xw.spotify.clientId",
+  token:    "xw.spotify.token",
+  expires:  "xw.spotify.expires",
+};
+
+const $ = (id) => document.getElementById(id);
+
+// ─── OAuth handling ─────────────────────────────────────────────────
+function parseHashToken() {
+  if (!location.hash.startsWith("#")) return null;
+  const p = new URLSearchParams(location.hash.slice(1));
+  const token = p.get("access_token");
+  const expiresIn = parseInt(p.get("expires_in") || "3600", 10);
+  if (!token) return null;
+  // wipe the hash so the token doesn't sit in the URL
+  history.replaceState(null, "", location.pathname + location.search);
+  return { token, expiresAt: Date.now() + expiresIn * 1000 };
+}
+
+function getStoredToken() {
+  const token = localStorage.getItem(STORAGE.token);
+  const exp = parseInt(localStorage.getItem(STORAGE.expires) || "0", 10);
+  if (!token || exp < Date.now()) return null;
+  return { token, expiresAt: exp };
+}
+
+function storeToken(t) {
+  localStorage.setItem(STORAGE.token, t.token);
+  localStorage.setItem(STORAGE.expires, String(t.expiresAt));
+}
+
+function clearToken() {
+  localStorage.removeItem(STORAGE.token);
+  localStorage.removeItem(STORAGE.expires);
+}
+
+function loginWithSpotify(clientId) {
+  localStorage.setItem(STORAGE.clientId, clientId);
+  const params = new URLSearchParams({
+    client_id: clientId,
+    response_type: "token",
+    redirect_uri: REDIRECT_URI,
+    scope: SCOPES,
+    show_dialog: "false",
+  });
+  location.href = "https://accounts.spotify.com/authorize?" + params.toString();
+}
+
+// ─── Spotify API helpers ────────────────────────────────────────────
+let token = null;
+
+async function sp(path, opts = {}) {
+  const r = await fetch("https://api.spotify.com/v1" + path, {
+    ...opts,
+    headers: {
+      ...(opts.headers || {}),
+      Authorization: "Bearer " + token,
+      "Content-Type": "application/json",
+    },
+  });
+  if (r.status === 401) {
+    clearToken();
+    showLogin();
+    throw new Error("session expired, please re-login");
+  }
+  if (r.status === 204) return null;    // no active playback
+  if (!r.ok) {
+    const body = await r.text();
+    throw new Error(`${r.status} ${body}`);
+  }
+  const ct = r.headers.get("content-type") || "";
+  return ct.includes("json") ? await r.json() : null;
+}
+
+// ─── UI helpers ─────────────────────────────────────────────────────
+function showLogin() {
+  $("login").hidden = false;
+  $("player").hidden = true;
+  $("redirect-uri-echo").textContent = REDIRECT_URI;
+  const savedId = localStorage.getItem(STORAGE.clientId) || "";
+  if (savedId) $("client-id-input").value = savedId;
+  const btn = $("connect-btn");
+  const input = $("client-id-input");
+  const check = () => { btn.disabled = input.value.trim().length < 16; };
+  input.addEventListener("input", check);
+  check();
+  btn.onclick = () => {
+    const id = input.value.trim();
+    if (id) loginWithSpotify(id);
+  };
+}
+
+function showPlayer() {
+  $("login").hidden = true;
+  $("player").hidden = false;
+  $("logout-link").style.display = "inline";
+}
+
+function setErr(msg) {
+  if (!msg) { $("err").hidden = true; return; }
+  $("err").textContent = msg;
+  $("err").hidden = false;
+  setTimeout(() => { $("err").hidden = true; }, 6000);
+}
+
+function fmtTime(ms) {
+  const s = Math.floor(ms / 1000);
+  const m = Math.floor(s / 60);
+  return `${m}:${String(s % 60).padStart(2, "0")}`;
+}
+
+// ─── Poll player state ──────────────────────────────────────────────
+let progressMs = 0, durationMs = 0, isPlaying = false, lastPollAt = 0;
+
+async function poll() {
+  try {
+    const data = await sp("/me/player");
+    if (!data || !data.item) {
+      $("kicker").textContent = "Not playing";
+      $("track").textContent = "—";
+      $("artist").textContent = "—";
+      $("album").textContent = "—";
+      $("art").style.backgroundImage = "";
+      $("bar").style.width = "0%";
+      $("device-name").textContent = "no device";
+      $("play").textContent = "▶";
+      $("status-text").textContent = "idle";
+      return;
+    }
+    const it = data.item;
+    $("kicker").textContent = data.is_playing ? "Now playing" : "Paused";
+    $("track").textContent = it.name;
+    $("artist").textContent = (it.artists || []).map(a => a.name).join(", ");
+    $("album").textContent = it.album?.name || "";
+    const img = it.album?.images?.[0]?.url;
+    if (img) $("art").style.backgroundImage = `url("${img}")`;
+    durationMs = it.duration_ms;
+    progressMs = data.progress_ms || 0;
+    isPlaying = data.is_playing;
+    lastPollAt = Date.now();
+    $("t-tot").textContent = fmtTime(durationMs);
+    $("device-name").textContent = data.device?.name || "—";
+    $("play").textContent = isPlaying ? "⏸" : "▶";
+    $("status-text").textContent = isPlaying ? "live · spotify" : "paused";
+  } catch (e) {
+    setErr(e.message);
+    $("status-text").textContent = "error";
+  }
+}
+
+// Smooth progress bar locally between polls
+function tickProgress() {
+  if (isPlaying && durationMs > 0 && lastPollAt) {
+    const elapsed = progressMs + (Date.now() - lastPollAt);
+    const pct = Math.min(100, (elapsed / durationMs) * 100);
+    $("bar").style.width = pct + "%";
+    $("t-cur").textContent = fmtTime(elapsed);
+  }
+  requestAnimationFrame(tickProgress);
+}
+
+// ─── Controls ───────────────────────────────────────────────────────
+$("play").onclick = async () => {
+  try {
+    await sp(isPlaying ? "/me/player/pause" : "/me/player/play", { method: "PUT" });
+    setTimeout(poll, 400);
+  } catch (e) { setErr(e.message); }
+};
+$("next").onclick = async () => {
+  try { await sp("/me/player/next", { method: "POST" }); setTimeout(poll, 400); }
+  catch (e) { setErr(e.message); }
+};
+$("prev").onclick = async () => {
+  try { await sp("/me/player/previous", { method: "POST" }); setTimeout(poll, 400); }
+  catch (e) { setErr(e.message); }
+};
+$("logout-link").onclick = () => { clearToken(); location.reload(); };
+
+// ─── Init ───────────────────────────────────────────────────────────
+(function init() {
+  // 1. If a fresh token just arrived from Spotify redirect, store it
+  const fromHash = parseHashToken();
+  if (fromHash) storeToken(fromHash);
+
+  // 2. Use stored token if present
+  const stored = getStoredToken();
+  if (!stored) { showLogin(); return; }
+
+  token = stored.token;
+  showPlayer();
+  poll();
+  setInterval(poll, 4000);
+  tickProgress();
+})();
+</script>
+</body>
+</html>

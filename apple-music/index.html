@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>Apple Music · Xeneon Widget</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#000;
+    --ink:#fff;
+    --dim:#9a9a9a;
+    --line:rgba(255,255,255,.12);
+    --card:#0b0b0b;
+    --accent:#FA2D48; /* Apple Music red */
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:var(--bg);color:var(--ink);font-family:"Archivo",system-ui,sans-serif;overflow:hidden;-webkit-font-smoothing:antialiased}
+  button,input{font-family:inherit;color:inherit;border:none;background:none}
+  button{cursor:pointer}
+  input{outline:none}
+  a{color:inherit}
+
+  .shell{position:fixed;inset:0;display:grid;place-items:center;padding:18px}
+  .mono{font-family:"JetBrains Mono",ui-monospace,monospace;letter-spacing:.04em}
+
+  /* setup */
+  .setup{
+    width:min(100%,600px);
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:26px 24px 22px;
+    display:flex;flex-direction:column;gap:18px;
+  }
+  .setup h1{font-size:22px;font-weight:900;letter-spacing:-.01em;display:flex;align-items:center;gap:10px}
+  .brand-dot{width:10px;height:10px;border-radius:50%;background:var(--accent)}
+  .setup p{color:var(--dim);font-size:13px;line-height:1.5}
+  .setup label{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.18em;color:var(--dim);margin-bottom:6px}
+  .url-input{
+    width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;
+    background:#000;font-family:"JetBrains Mono",monospace;font-size:12px;letter-spacing:.02em;
+  }
+  .url-input:focus{border-color:var(--accent)}
+  .primary{
+    padding:12px 16px;background:var(--accent);color:#fff;font-weight:700;
+    border-radius:10px;transition:transform .15s ease,filter .15s ease;font-size:13px;letter-spacing:.02em;
+  }
+  .primary:hover{transform:translateY(-1px);filter:brightness(1.08)}
+  .primary:disabled{opacity:.5;cursor:not-allowed;transform:none}
+
+  .guide{font-size:12px;color:var(--dim);line-height:1.7}
+  .guide ol{padding-left:18px}
+  .guide code{font-family:"JetBrains Mono",monospace;background:#000;padding:2px 6px;border-radius:4px;color:#ddd;font-size:11px;border:1px solid var(--line)}
+  .guide a{color:var(--ink);text-decoration:underline;text-underline-offset:2px}
+
+  .presets{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
+  .preset{
+    padding:10px 12px;border:1px solid var(--line);border-radius:10px;
+    font-size:11px;letter-spacing:.04em;text-align:left;
+    transition:border-color .15s ease,background .15s ease;cursor:pointer;
+  }
+  .preset:hover{border-color:var(--accent);background:rgba(250,45,72,.06)}
+  .preset-label{font-size:9px;text-transform:uppercase;letter-spacing:.18em;color:var(--dim);margin-bottom:4px}
+  .preset-name{font-weight:700;font-size:12px;color:#fff}
+
+  .homepod-note{
+    border:1px solid var(--line);border-radius:12px;padding:12px 14px;
+    background:rgba(255,255,255,.02);font-size:11px;color:var(--dim);line-height:1.5;
+  }
+  .homepod-note strong{color:#fff;font-weight:700}
+
+  /* player */
+  .player{
+    width:100%;height:100%;display:grid;grid-template-rows:auto 1fr auto;
+    padding:18px;gap:14px;
+    background:
+      radial-gradient(800px 400px at 90% -10%, rgba(250,45,72,.10), transparent 65%),
+      var(--bg);
+  }
+  .top{display:flex;align-items:center;justify-content:space-between}
+  .top .label{font-size:10px;text-transform:uppercase;letter-spacing:.22em;color:var(--dim)}
+  .top .actions{display:flex;gap:10px}
+  .top-btn{
+    font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);cursor:pointer;
+  }
+  .top-btn:hover{color:var(--ink)}
+
+  .embed-wrap{
+    position:relative;border:1px solid var(--line);border-radius:14px;overflow:hidden;
+    background:#0a0a0a;
+  }
+  .embed-wrap iframe{
+    width:100%;height:100%;border:0;background:transparent;display:block;
+  }
+
+  .footer{display:flex;align-items:center;justify-content:space-between;font-size:10px;color:var(--dim);letter-spacing:.18em;text-transform:uppercase}
+  .footer .mono{font-size:10px}
+
+  .hidden{display:none !important}
+
+  /* error */
+  .error{
+    position:absolute;top:14px;left:14px;right:14px;
+    padding:10px 14px;background:rgba(250,45,72,.15);border:1px solid rgba(250,45,72,.5);
+    border-radius:8px;font-size:12px;color:#ffb5be;
+    display:none;z-index:10;
+  }
+  .error.visible{display:block}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- SETUP -->
+  <section id="setup" class="setup">
+    <h1><span class="brand-dot"></span> Apple Music</h1>
+    <p>Paste any Apple Music share link — song, album, playlist, station, or radio. Plays 30s previews for everyone, full tracks for subscribers signed into Apple's embed.</p>
+
+    <div>
+      <label>Share URL</label>
+      <input id="urlInput" class="url-input" placeholder="https://music.apple.com/us/album/..." autocomplete="off" spellcheck="false" />
+    </div>
+
+    <button id="goBtn" class="primary">Load</button>
+
+    <div>
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.18em;color:var(--dim);margin-bottom:8px">Or pick a station</div>
+      <div class="presets">
+        <button class="preset" data-url="https://music.apple.com/us/station/apple-music-1/ra.978194965">
+          <div class="preset-label">Radio</div>
+          <div class="preset-name">Apple Music 1</div>
+        </button>
+        <button class="preset" data-url="https://music.apple.com/us/station/apple-music-hits/ra.985484166">
+          <div class="preset-label">Radio</div>
+          <div class="preset-name">Hits</div>
+        </button>
+        <button class="preset" data-url="https://music.apple.com/us/station/apple-music-country/ra.985484172">
+          <div class="preset-label">Radio</div>
+          <div class="preset-name">Country</div>
+        </button>
+        <button class="preset" data-url="https://music.apple.com/us/playlist/todays-hits/pl.f4d106fed2bd41149aaacabb233eb5eb">
+          <div class="preset-label">Playlist</div>
+          <div class="preset-name">Today's Hits</div>
+        </button>
+      </div>
+    </div>
+
+    <div class="guide">
+      <strong style="color:#fff;font-weight:700;letter-spacing:.04em;font-size:11px;text-transform:uppercase">How to get the URL</strong>
+      <ol style="margin-top:8px">
+        <li>Open Apple Music (web, iOS, or Mac).</li>
+        <li>Find a song/album/playlist → <code>⋯</code> menu → <code>Share</code> → <code>Copy Link</code>.</li>
+        <li>Paste it above. Accepted formats: <code>music.apple.com/*/album/*</code>, <code>/playlist/*</code>, <code>/song/*</code>, <code>/station/*</code>.</li>
+      </ol>
+    </div>
+
+    <div class="homepod-note">
+      <strong>About HomePod control:</strong> Apple does not expose HomePod playback over any web-callable API — the only official path is the Home/Shortcuts apps on an Apple device. The practical workaround is <strong>Home Assistant</strong> with the HomeKit Controller integration running on a Mac/Raspberry Pi on your network; it exposes a local REST endpoint a Xeneon widget can hit. Until that's set up, this widget controls an Apple Music embed — not the physical speaker.
+    </div>
+  </section>
+
+  <!-- PLAYER -->
+  <section id="player" class="player hidden">
+    <div id="error" class="error"></div>
+
+    <div class="top">
+      <span class="label" id="topLabel">Now Playing</span>
+      <div class="actions">
+        <span class="top-btn" id="changeBtn">Change</span>
+      </div>
+    </div>
+
+    <div class="embed-wrap">
+      <iframe id="amFrame"
+              allow="autoplay *; encrypted-media *; clipboard-write"
+              sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-storage-access-by-user-activation allow-top-navigation-by-user-activation"
+              loading="lazy"></iframe>
+    </div>
+
+    <div class="footer">
+      <span id="kindLabel" class="mono">—</span>
+      <span class="mono" id="clock">—</span>
+    </div>
+  </section>
+</div>
+
+<script>
+(() => {
+  const STORAGE_URL = "xw.applemusic.url";
+
+  const $ = s => document.querySelector(s);
+  const setupEl = $("#setup");
+  const playerEl = $("#player");
+  const urlInput = $("#urlInput");
+  const err = $("#error");
+
+  const showError = msg => {
+    err.textContent = msg;
+    err.classList.add("visible");
+    setTimeout(() => err.classList.remove("visible"), 4500);
+  };
+
+  const tickClock = () => {
+    const d = new Date();
+    $("#clock").textContent = d.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
+  };
+  setInterval(tickClock, 15000); tickClock();
+
+  // Convert an apple music URL to an embed URL.
+  // Handles: /album/name/id, /album/name/id?i=song, /playlist/name/id, /song/id, /station/name/id
+  const toEmbed = url => {
+    try {
+      const u = new URL(url);
+      if (!u.hostname.includes("music.apple.com")) return null;
+      // embed.music.apple.com expects exactly the same path + query
+      const embedUrl = `https://embed.music.apple.com${u.pathname}${u.search}`;
+      return embedUrl;
+    } catch(e) { return null; }
+  };
+
+  const detectKind = path => {
+    if (path.includes("/album/")) return "ALBUM";
+    if (path.includes("/playlist/")) return "PLAYLIST";
+    if (path.includes("/song/")) return "SONG";
+    if (path.includes("/station/")) return "STATION";
+    if (path.includes("/music-video/")) return "VIDEO";
+    if (path.includes("/artist/")) return "ARTIST";
+    return "TRACK";
+  };
+
+  const showSetup = () => {
+    setupEl.classList.remove("hidden");
+    playerEl.classList.add("hidden");
+  };
+  const showPlayer = () => {
+    setupEl.classList.add("hidden");
+    playerEl.classList.remove("hidden");
+  };
+
+  const load = url => {
+    const embed = toEmbed(url);
+    if (!embed){
+      showError("That doesn't look like an Apple Music link. Try a URL from music.apple.com.");
+      return false;
+    }
+    $("#amFrame").src = embed;
+    $("#kindLabel").textContent = detectKind(new URL(url).pathname);
+    localStorage.setItem(STORAGE_URL, url);
+    showPlayer();
+    return true;
+  };
+
+  // events
+  $("#goBtn").addEventListener("click", () => {
+    const v = urlInput.value.trim();
+    if (!v) return;
+    load(v);
+  });
+  urlInput.addEventListener("keydown", e => { if (e.key === "Enter") $("#goBtn").click(); });
+
+  document.querySelectorAll(".preset").forEach(btn => {
+    btn.addEventListener("click", () => load(btn.dataset.url));
+  });
+
+  $("#changeBtn").addEventListener("click", () => {
+    const saved = localStorage.getItem(STORAGE_URL) || "";
+    urlInput.value = saved;
+    showSetup();
+  });
+
+  // boot
+  const saved = localStorage.getItem(STORAGE_URL);
+  if (saved){
+    urlInput.value = saved;
+    load(saved);
+  } else {
+    showSetup();
+  }
+})();
+</script>
+</body>
+</html>

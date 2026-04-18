@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Xeneon Widgets</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;700;900&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#000;
+    --ink:#fff;
+    --dim:#9a9a9a;
+    --line:rgba(255,255,255,.12);
+    --card:#0b0b0b;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--ink);font-family:"Archivo",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  a{color:inherit;text-decoration:none}
+
+  .wrap{max-width:1100px;margin:0 auto;padding:64px 28px 96px}
+  .mono{font-family:"JetBrains Mono",ui-monospace,monospace;letter-spacing:.04em}
+  .kicker{font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--dim);margin-bottom:18px}
+  h1{font-size:clamp(38px,7vw,84px);font-weight:900;letter-spacing:-.03em;line-height:.95;margin-bottom:18px}
+  h1 em{font-family:"Instrument Serif",serif;font-style:italic;font-weight:400}
+  .lede{font-size:17px;color:var(--dim);max-width:620px;line-height:1.5}
+
+  .meta{display:flex;flex-wrap:wrap;gap:18px;margin-top:34px;padding-top:22px;border-top:1px solid var(--line);font-size:11px;color:var(--dim);letter-spacing:.08em;text-transform:uppercase}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;margin-top:62px}
+
+  .card{
+    background:var(--card);border:1px solid var(--line);border-radius:16px;
+    padding:22px;display:flex;flex-direction:column;gap:14px;
+    transition:transform .2s ease,border-color .2s ease,background .2s ease;
+    position:relative;overflow:hidden;
+  }
+  .card:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.28)}
+  .card[data-wip]{opacity:.55}
+  .card[data-wip]::after{
+    content:"planned";position:absolute;top:12px;right:12px;
+    font-family:"JetBrains Mono",monospace;font-size:9px;
+    letter-spacing:.2em;text-transform:uppercase;color:var(--dim);
+    padding:3px 8px;border:1px solid var(--line);border-radius:999px;
+  }
+
+  .dot{width:10px;height:10px;border-radius:50%}
+  .head{display:flex;align-items:center;gap:10px}
+  .name{font-size:18px;font-weight:800;letter-spacing:-.01em}
+  .desc{font-size:13px;color:var(--dim);line-height:1.5;flex:1}
+
+  .cta{
+    display:flex;align-items:center;justify-content:space-between;
+    padding-top:10px;border-top:1px solid var(--line);
+    font-family:"JetBrains Mono",monospace;font-size:10px;
+    letter-spacing:.18em;text-transform:uppercase;color:var(--dim);
+  }
+  .cta .go{color:#fff;transition:transform .2s ease}
+  .card:hover .cta .go{transform:translateX(4px)}
+
+  .setup{
+    margin-top:62px;padding:22px;border:1px solid var(--line);border-radius:16px;
+    background:rgba(255,255,255,.015);
+  }
+  .setup h2{font-size:20px;font-weight:900;letter-spacing:-.01em;margin-bottom:12px}
+  .setup ol{padding-left:18px;font-size:13px;color:var(--dim);line-height:1.7}
+  .setup code{font-family:"JetBrains Mono",monospace;background:#000;padding:2px 6px;border-radius:4px;color:#ddd;font-size:11px;border:1px solid var(--line)}
+
+  footer{margin-top:62px;padding-top:22px;border-top:1px solid var(--line);font-size:11px;color:var(--dim);letter-spacing:.06em;display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="kicker mono">xeneon-widgets · efe biskin</div>
+  <h1>Widgets for the <em>Corsair Xeneon Edge.</em></h1>
+  <p class="lede">Tiny single-page widgets built for the Xeneon's iCUE iFrame panel. Each folder here is a self-contained HTML file — no build step, no framework, just drop the URL into iCUE.</p>
+
+  <div class="meta mono">
+    <span>2560 × 720</span>
+    <span>iCUE iFrame</span>
+    <span>Zero-dep HTML</span>
+    <span>MIT</span>
+  </div>
+
+  <section class="grid">
+    <a class="card" href="./spotify/">
+      <div class="head"><span class="dot" style="background:#1DB954"></span><span class="name">Spotify</span></div>
+      <p class="desc">Now-playing + transport controls for your Spotify account. OAuth implicit grant, no server needed. Polls every 4s, smooth progress tick.</p>
+      <div class="cta"><span>/spotify/</span><span class="go">Open →</span></div>
+    </a>
+
+    <a class="card" href="./discord/">
+      <div class="head"><span class="dot" style="background:#5865F2"></span><span class="name">Discord</span></div>
+      <p class="desc">Live Discord presence — avatar, status, current game, custom status, and Spotify now-playing if Discord sees it. Powered by Lanyard.</p>
+      <div class="cta"><span>/discord/</span><span class="go">Open →</span></div>
+    </a>
+
+    <a class="card" href="./apple-music/">
+      <div class="head"><span class="dot" style="background:#FA2D48"></span><span class="name">Apple Music</span></div>
+      <p class="desc">Paste any Apple Music share URL — song, album, playlist, or radio station — and embed it. Honest HomePod note included.</p>
+      <div class="cta"><span>/apple-music/</span><span class="go">Open →</span></div>
+    </a>
+
+    <a class="card" href="./weather/">
+      <div class="head"><span class="dot" style="background:#6ec46e"></span><span class="name">Weather</span></div>
+      <p class="desc">Big number + 4-day forecast driven by the <strong style="color:#fff">Meteora API</strong>. Optimized for the 2560×720 Xeneon panel. URL-configurable.</p>
+      <div class="cta"><span>/weather/</span><span class="go">Open →</span></div>
+    </a>
+  </section>
+
+  <section class="setup">
+    <h2>Point iCUE at a widget</h2>
+    <ol>
+      <li>Serve this folder locally: <code>python -m http.server 5556</code> from the repo root.</li>
+      <li>Open iCUE → <code>Xeneon Edge</code> → <code>Widgets</code> → <code>iFrame</code>.</li>
+      <li>Paste the widget URL, e.g. <code>http://localhost:5556/spotify/</code>.</li>
+      <li>Or deploy to GitHub Pages / Cloudflare Pages and use the public URL from any device.</li>
+    </ol>
+  </section>
+
+  <footer class="mono">
+    <span>© 2026 Efe Biskin</span>
+    <span>github.com/efebiskin/xeneon-widgets</span>
+  </footer>
+</div>
+</body>
+</html>
