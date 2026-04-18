@@ -2,20 +2,68 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Meteora Widget — for Xeneon Edge</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Weather · Xeneon Widget</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   /*
-    OPTIMIZED FOR CORSAIR XENEON EDGE (14.5" touchscreen, 2560×720).
-    Also scales down to ~480×320 for smaller screen slots.
-    Loads: api-base, lat, lon, key from URL params.
-      e.g. widget.html?base=http://192.168.1.10:8787&key=mto_xxx&lat=34.17&lon=-118.87
+    Optimized for Corsair Xeneon Edge (14.5" 2560×720), scales down gracefully.
+    Stores base/key/lat/lon/label in localStorage.
+    URL params still override: ?base=...&key=mto_...&lat=...&lon=...&label=...
   */
-  *{box-sizing:border-box;margin:0;padding:0}
-  html,body{width:100%;height:100%;background:#000;color:#f5f5f5;font-family:"Archivo",system-ui,sans-serif;overflow:hidden}
+  :root{
+    --bg:#000; --ink:#f5f5f5; --dim:#9a9a9a; --line:rgba(255,255,255,.12);
+    --card:#0b0b0b; --accent:#6ec46e; --danger:#ff6b6b;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html,body{width:100%;height:100%;background:var(--bg);color:var(--ink);font-family:"Archivo",system-ui,sans-serif;overflow:hidden;-webkit-font-smoothing:antialiased}
+  button,input{font-family:inherit;color:inherit;border:none;background:none;outline:none}
+  button{cursor:pointer}
+  a{color:inherit}
 
+  .mono{font-family:"JetBrains Mono",ui-monospace,monospace;letter-spacing:.04em}
+  .hidden{display:none !important}
+
+  /* ─── SETUP SCREEN ─────────────────────────────────────────── */
+  .setup{position:fixed;inset:0;display:grid;place-items:center;padding:18px}
+  .setup-panel{
+    width:min(100%,580px);background:var(--card);border:1px solid var(--line);border-radius:16px;
+    padding:24px;display:flex;flex-direction:column;gap:14px;
+  }
+  .setup-panel h1{font-size:22px;font-weight:900;letter-spacing:-.01em;display:flex;align-items:center;gap:10px}
+  .brand-dot{width:10px;height:10px;background:var(--accent);border-radius:50%}
+  .setup-panel p{color:var(--dim);font-size:13px;line-height:1.5}
+  .setup-panel label{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.18em;color:var(--dim);margin-bottom:6px}
+  .setup-panel input{
+    width:100%;padding:11px 14px;border:1px solid var(--line);border-radius:8px;
+    background:#000;font-family:"JetBrains Mono",monospace;font-size:12px;color:#fff;
+  }
+  .setup-panel input:focus{border-color:var(--accent)}
+  .search-wrap{position:relative}
+  .results{
+    position:absolute;left:0;right:0;top:calc(100% + 4px);
+    background:#0e0e0e;border:1px solid var(--line);border-radius:8px;
+    max-height:180px;overflow-y:auto;z-index:10;
+  }
+  .result{
+    padding:10px 14px;cursor:pointer;font-size:13px;display:flex;justify-content:space-between;gap:10px;
+    border-bottom:1px solid var(--line);
+  }
+  .result:last-child{border-bottom:none}
+  .result:hover{background:rgba(255,255,255,.04)}
+  .result small{color:var(--dim);font-family:"JetBrains Mono",monospace;font-size:11px}
+  .primary{
+    padding:12px 16px;background:var(--accent);color:#000;font-weight:800;
+    border-radius:10px;font-size:13px;letter-spacing:.02em;transition:filter .15s,transform .15s;
+  }
+  .primary:hover{filter:brightness(1.1);transform:translateY(-1px)}
+  .primary:disabled{opacity:.5;cursor:not-allowed;transform:none}
+  .guide{font-size:12px;color:var(--dim);line-height:1.7}
+  .guide code{font-family:"JetBrains Mono",monospace;background:#000;padding:2px 6px;border-radius:4px;color:#ddd;font-size:11px;border:1px solid var(--line)}
+
+  /* ─── WIDGET ────────────────────────────────────────────────── */
   .w{
     width:100%;height:100%;display:grid;
     grid-template-columns: 1.2fr 1fr;
@@ -26,9 +74,8 @@
     .w { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
   }
 
-  /* left pane: big number */
   .left{display:flex;flex-direction:column;justify-content:center;gap:2vmin}
-  .label{font-family:"JetBrains Mono",monospace;font-size:clamp(10px,1.3vmin,16px);letter-spacing:.22em;color:#999;text-transform:uppercase}
+  .label{font-family:"JetBrains Mono",monospace;font-size:clamp(10px,1.3vmin,16px);letter-spacing:.22em;color:var(--dim);text-transform:uppercase}
   .loc{font-size:clamp(16px,3vmin,34px);font-weight:700;letter-spacing:-.015em;line-height:1.1}
   .temp{
     font-size:clamp(80px,22vmin,240px);font-weight:900;line-height:.85;letter-spacing:-.04em;
@@ -39,27 +86,81 @@
   .desc{font-size:clamp(14px,2.2vmin,28px);color:#ddd;font-weight:500;font-style:italic}
   .feels{font-family:"JetBrains Mono",monospace;font-size:clamp(10px,1.3vmin,15px);color:#888;letter-spacing:.1em;text-transform:uppercase}
 
-  /* right pane: forecast strip */
   .right{display:flex;flex-direction:column;gap:1.2vmin}
   .stats{display:grid;grid-template-columns:repeat(2,1fr);gap:1vmin;margin-bottom:1vmin}
-  .stat{background:#161616;border:1px solid #2a2a2a;padding:1.2vmin 1.6vmin}
+  .stat{background:#0e0e0e;border:1px solid var(--line);padding:1.2vmin 1.6vmin;border-radius:6px}
   .stat dt{font-family:"JetBrains Mono",monospace;font-size:clamp(8px,1.1vmin,13px);color:#888;letter-spacing:.15em;text-transform:uppercase}
   .stat dd{font-size:clamp(14px,2.3vmin,26px);font-weight:700;color:#fff;margin-top:.2em}
   .fc{display:grid;grid-template-columns:repeat(4,1fr);gap:1vmin;flex:1}
-  .fc-day{background:#161616;border:1px solid #2a2a2a;padding:1.2vmin;display:flex;flex-direction:column;gap:.3vmin;text-align:center;justify-content:center}
+  .fc-day{background:#0e0e0e;border:1px solid var(--line);padding:1.2vmin;display:flex;flex-direction:column;gap:.3vmin;text-align:center;justify-content:center;border-radius:6px}
   .fc-date{font-family:"JetBrains Mono",monospace;font-size:clamp(8px,1.1vmin,12px);color:#888;letter-spacing:.15em;text-transform:uppercase}
   .fc-temp{font-size:clamp(14px,2.2vmin,24px);font-weight:700;color:#fff}
   .fc-temp .low{color:#888;font-weight:400;font-size:.8em}
   .fc-desc{font-size:clamp(9px,1.3vmin,14px);color:#bbb;font-style:italic;line-height:1.1;min-height:2.2em}
 
-  /* status */
-  .status{position:absolute;bottom:1vmin;left:3vmin;font-family:"JetBrains Mono",monospace;font-size:clamp(8px,1vmin,11px);color:#555;letter-spacing:.1em;text-transform:uppercase}
-  .status .live{color:#6ec46e}.status .live::before{content:"● "}
+  .status{position:fixed;bottom:1vmin;left:3vmin;font-family:"JetBrains Mono",monospace;font-size:clamp(8px,1vmin,11px);color:#555;letter-spacing:.1em;text-transform:uppercase;display:flex;gap:10px;align-items:center}
+  .status .live{color:var(--accent)}
+  .status .live::before{content:"● "}
 
-  .err{position:absolute;inset:0;display:grid;place-items:center;background:rgba(0,0,0,.9);color:#ff6b6b;font-family:"JetBrains Mono",monospace;padding:2vmin;font-size:clamp(12px,2vmin,18px);text-align:center}
+  .change{
+    position:fixed;top:1.4vmin;right:2vmin;font-family:"JetBrains Mono",monospace;
+    font-size:clamp(9px,1.1vmin,12px);letter-spacing:.16em;text-transform:uppercase;
+    color:var(--dim);cursor:pointer;
+  }
+  .change:hover{color:var(--ink)}
+
+  .err{
+    position:fixed;top:1.4vmin;left:50%;transform:translateX(-50%);
+    padding:10px 16px;background:rgba(255,107,107,.12);border:1px solid rgba(255,107,107,.45);
+    border-radius:8px;font-size:12px;color:#ffb0b2;z-index:50;
+    display:none;
+  }
+  .err.visible{display:block}
 </style>
 </head>
 <body>
+
+<!-- ─── SETUP ─────────────────────────────────────────────────── -->
+<section id="setup" class="setup">
+  <div class="setup-panel">
+    <h1><span class="brand-dot"></span> Weather</h1>
+    <p>Live current conditions + 4-day forecast via your Meteora API. Credentials saved locally — your browser only.</p>
+
+    <div>
+      <label>Meteora base URL</label>
+      <input id="baseInput" placeholder="http://localhost:8787" autocomplete="off" spellcheck="false" />
+    </div>
+
+    <div>
+      <label>API key</label>
+      <input id="keyInput" placeholder="mto_..." autocomplete="off" spellcheck="false" />
+    </div>
+
+    <div>
+      <label>City</label>
+      <div class="search-wrap">
+        <input id="cityInput" placeholder="Search city (e.g. Thousand Oaks)" autocomplete="off" spellcheck="false" />
+        <div id="results" class="results hidden"></div>
+      </div>
+      <div id="pickedLocation" style="font-size:11px;color:var(--dim);margin-top:6px;font-family:JetBrains Mono,monospace;letter-spacing:.04em"></div>
+    </div>
+
+    <button id="connectBtn" class="primary">Connect</button>
+
+    <div class="guide">
+      <strong style="color:#fff;font-weight:700;letter-spacing:.04em;font-size:11px;text-transform:uppercase">Need a key?</strong>
+      <div style="margin-top:6px">
+        <code>curl -X POST &lt;base&gt;/v1/keys -H "Content-Type: application/json" -d '{"email":"you@example.com"}'</code>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── WIDGET ────────────────────────────────────────────────── -->
+<div id="dashboard" class="hidden">
+  <div class="err" id="err"></div>
+  <span class="change" id="changeBtn">CHANGE</span>
+
   <div class="w" id="widget" hidden>
     <div class="left">
       <span class="label" id="label-current">Current</span>
@@ -76,30 +177,143 @@
       <div class="fc" id="fc"></div>
     </div>
   </div>
+
   <div class="status" id="status">
     <span id="status-text">loading…</span>
     <span id="last-update"></span>
   </div>
-  <div class="err" id="err" hidden></div>
+</div>
 
 <script>
 (() => {
-  const q = new URLSearchParams(location.search);
-  const base = q.get("base") || (location.hostname === "localhost" || location.hostname === "127.0.0.1" ? `http://${location.hostname}:8787` : "");
-  const key  = q.get("key")  || "";
-  const lat  = parseFloat(q.get("lat") || "34.17");
-  const lon  = parseFloat(q.get("lon") || "-118.87");
-  const refreshMs = Math.max(60_000, parseInt(q.get("refresh") || "600000", 10)); // default 10 min
+  const STORAGE = {
+    base: "xw.weather.base",
+    key:  "xw.weather.key",
+    lat:  "xw.weather.lat",
+    lon:  "xw.weather.lon",
+    label:"xw.weather.label",
+  };
 
-  const $ = (id) => document.getElementById(id);
-  const fmt = (x) => Math.round(x);
-  const dayName = (iso) => new Date(iso).toLocaleDateString(undefined, { weekday: "short" });
+  const $ = id => document.getElementById(id);
+
+  // URL params override stored values
+  const q = new URLSearchParams(location.search);
+  let base  = q.get("base")  || localStorage.getItem(STORAGE.base)  || "";
+  let key   = q.get("key")   || localStorage.getItem(STORAGE.key)   || "";
+  let lat   = parseFloat(q.get("lat")   || localStorage.getItem(STORAGE.lat)   || "NaN");
+  let lon   = parseFloat(q.get("lon")   || localStorage.getItem(STORAGE.lon)   || "NaN");
+  let label = q.get("label") || localStorage.getItem(STORAGE.label) || "";
+  const refreshMs = Math.max(60_000, parseInt(q.get("refresh") || "600000", 10));
+
+  let refreshTimer = null;
+  let picked = null; // {lat, lon, label} from city search
+
+  const showError = msg => {
+    $("err").textContent = msg;
+    $("err").classList.add("visible");
+    setTimeout(() => $("err").classList.remove("visible"), 5000);
+  };
+
+  // ─── setup screen ─────────────────────────────────────────
+  const showSetup = () => {
+    $("setup").classList.remove("hidden");
+    $("dashboard").classList.add("hidden");
+    $("baseInput").value = base || "http://localhost:8787";
+    $("keyInput").value = key;
+    if (label && !isNaN(lat)) {
+      $("cityInput").value = label;
+      $("pickedLocation").textContent = `${label} · ${lat.toFixed(3)}°, ${lon.toFixed(3)}°`;
+      picked = { lat, lon, label };
+    }
+  };
+  const showDash = () => {
+    $("setup").classList.add("hidden");
+    $("dashboard").classList.remove("hidden");
+  };
+
+  // ─── city search (uses meteora /v1/geo/search) ────────────
+  let searchTimer = null;
+  $("cityInput").addEventListener("input", e => {
+    const q = e.target.value.trim();
+    clearTimeout(searchTimer);
+    if (q.length < 2) { $("results").classList.add("hidden"); return; }
+    searchTimer = setTimeout(() => searchCities(q), 300);
+  });
+
+  async function searchCities(query) {
+    const b = $("baseInput").value.trim().replace(/\/$/, "");
+    const k = $("keyInput").value.trim();
+    if (!b || !k) { showError("Enter base URL and API key first."); return; }
+    try {
+      const r = await fetch(`${b}/v1/geo/search?q=${encodeURIComponent(query)}&key=${encodeURIComponent(k)}`);
+      if (!r.ok) {
+        const body = await r.json().catch(() => ({}));
+        throw new Error(body.detail?.error || body.detail || `HTTP ${r.status}`);
+      }
+      const data = await r.json();
+      const results = $("results");
+      results.innerHTML = "";
+      const items = (data.results || []).slice(0, 6);
+      if (!items.length){
+        results.innerHTML = `<div class="result" style="cursor:default"><span>no matches</span></div>`;
+      } else {
+        items.forEach(it => {
+          const div = document.createElement("div");
+          div.className = "result";
+          const region = [it.admin1, it.country].filter(Boolean).join(", ");
+          div.innerHTML = `<span><strong>${it.name}</strong> <small>${region}</small></span><small>${it.latitude.toFixed(2)}°, ${it.longitude.toFixed(2)}°</small>`;
+          div.addEventListener("click", () => {
+            picked = { lat: it.latitude, lon: it.longitude, label: it.name };
+            $("cityInput").value = it.name;
+            $("pickedLocation").textContent = `${it.name} · ${it.latitude.toFixed(3)}°, ${it.longitude.toFixed(3)}°`;
+            results.classList.add("hidden");
+          });
+          results.appendChild(div);
+        });
+      }
+      results.classList.remove("hidden");
+    } catch (e) {
+      showError("City search failed: " + e.message);
+    }
+  }
+
+  // ─── connect ──────────────────────────────────────────────
+  $("connectBtn").addEventListener("click", async () => {
+    const b = $("baseInput").value.trim().replace(/\/$/, "");
+    const k = $("keyInput").value.trim();
+    if (!b || !k) { showError("Base URL and API key are both required."); return; }
+    if (!picked) { showError("Pick a city from the search results."); return; }
+
+    base = b; key = k;
+    lat = picked.lat; lon = picked.lon; label = picked.label;
+
+    localStorage.setItem(STORAGE.base, base);
+    localStorage.setItem(STORAGE.key, key);
+    localStorage.setItem(STORAGE.lat, String(lat));
+    localStorage.setItem(STORAGE.lon, String(lon));
+    localStorage.setItem(STORAGE.label, label);
+
+    showDash();
+    refresh();
+  });
+
+  $("changeBtn").addEventListener("click", () => {
+    if (refreshTimer) { clearTimeout(refreshTimer); refreshTimer = null; }
+    showSetup();
+  });
+
+  // ─── fetch + render ───────────────────────────────────────
+  const fmt = x => Math.round(x);
+  const dayName = iso => new Date(iso).toLocaleDateString(undefined, { weekday: "short" });
 
   async function api(path) {
     const sep = path.includes("?") ? "&" : "?";
-    const url = `${base}${path}${key ? `${sep}key=${key}` : ""}`;
+    const url = `${base}${path}${sep}key=${encodeURIComponent(key)}`;
     const r = await fetch(url);
-    if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
+    if (!r.ok) {
+      const body = await r.json().catch(() => ({}));
+      throw new Error(body.detail?.error || body.detail || `${r.status} ${r.statusText}`);
+    }
     return r.json();
   }
 
@@ -109,8 +323,7 @@
         api(`/v1/weather/current?lat=${lat}&lon=${lon}`),
         api(`/v1/weather/forecast?lat=${lat}&lon=${lon}&days=4`),
       ]);
-      // left
-      $("loc").textContent = `${cur.location.latitude.toFixed(2)}°, ${cur.location.longitude.toFixed(2)}°`;
+      $("loc").textContent = label || `${cur.location.latitude.toFixed(2)}°, ${cur.location.longitude.toFixed(2)}°`;
       $("temp").textContent = fmt(cur.current.temperature_c);
       $("desc").textContent = cur.current.weather_description;
       $("feels").textContent = fmt(cur.current.feels_like_c);
@@ -118,7 +331,6 @@
       $("wind").textContent = fmt(cur.current.wind_speed_kmh);
       $("cloud").textContent = cur.current.cloud_cover_pct + "%";
       $("pres").textContent = fmt(cur.current.pressure_hpa) + " hPa";
-      // forecast
       $("fc").innerHTML = fc.days.map(d => `
         <div class="fc-day">
           <span class="fc-date">${dayName(d.date)}</span>
@@ -128,20 +340,24 @@
       `).join("");
 
       $("widget").hidden = false;
-      $("err").hidden = true;
       $("status-text").innerHTML = `<span class="live">LIVE · Meteora</span>`;
       $("last-update").textContent = "· " + new Date().toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
     } catch (e) {
-      $("err").hidden = false;
-      $("err").textContent = `Meteora error: ${e.message}`;
+      showError("Meteora error: " + e.message);
       $("status-text").textContent = "error · retry in 30s";
-      setTimeout(refresh, 30_000);
+      refreshTimer = setTimeout(refresh, 30_000);
       return;
     }
-    setTimeout(refresh, refreshMs);
+    refreshTimer = setTimeout(refresh, refreshMs);
   }
 
-  refresh();
+  // ─── boot ─────────────────────────────────────────────────
+  if (base && key && !isNaN(lat) && !isNaN(lon)) {
+    showDash();
+    refresh();
+  } else {
+    showSetup();
+  }
 })();
 </script>
 </body>
