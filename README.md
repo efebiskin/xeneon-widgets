@@ -25,7 +25,6 @@ Single-page widgets built for the **Corsair Xeneon Edge** (14.5" 2560×720 iCUE 
 | Widget | Folder | What it shows |
 |---|---|---|
 | **Spotify** | [`/spotify`](./spotify) | Now-playing + transport controls, OAuth implicit grant |
-| **Discord** | [`/discord`](./discord) | Live presence via Lanyard (read-only by design) |
 
 ## Run locally
 
@@ -44,7 +43,6 @@ Then point iCUE's iFrame widget at, e.g.:
 - `http://localhost:5556/stocks/` *(requires Meteora running)*
 - `http://localhost:5556/weather/?base=http://localhost:8787&key=mto_...&lat=34.17&lon=-118.87`
 - `http://localhost:5556/spotify/`
-- `http://localhost:5556/discord/`
 
 ## Deploy
 
@@ -56,11 +54,6 @@ Everything is static — drop the repo on GitHub Pages, Cloudflare Pages, Netlif
 1. Create an app at [developer.spotify.com/dashboard](https://developer.spotify.com/dashboard).
 2. Add your widget URL to **Redirect URIs** (copy the exact URI the widget shows).
 3. Paste the Client ID into the widget → Connect.
-
-### Discord
-1. Enable Developer Mode in Discord → copy your User ID.
-2. Join the Lanyard server at [discord.gg/lanyard](https://discord.gg/lanyard) (stay a member).
-3. Paste your ID into the widget.
 
 ### Weather / Stocks
 Both use your **Meteora API**. Create a key once:
@@ -78,12 +71,13 @@ No setup. Just open the URL.
 
 ## A note on what's *not* here
 
-Previous versions included a Discord voice-control widget and an Apple Music/HomePod control widget. They were removed in v0.2.0 because **neither can fully work from a browser**:
+Earlier versions included a Discord widget (both a voice-control attempt and a read-only Lanyard presence) and an Apple Music / HomePod control widget. All three were removed because **none can fully work from a browser**:
 
-- Discord voice/mute/deafen/screenshare control requires Discord's `rpc.voice.write` / `rpc.video.write` scopes, which are restricted to Discord-approved partner apps. A browser tab also cannot talk to the local Discord client (no pipe/socket access).
-- HomePod has no web-callable API. Apple's only control path is Home/Shortcuts on an Apple device; the realistic workaround is Home Assistant + HomeKit Controller on a LAN device.
+- **Discord voice / mute / deafen / screenshare** control requires Discord's `rpc.voice.write` / `rpc.video.write` scopes, which are restricted to Discord-approved partner apps. A browser tab also cannot talk to the local Discord client (no pipe/socket access).
+- **Discord presence** via Lanyard technically worked but only as a read-only status display — it didn't control anything, so it didn't pull weight for a Xeneon dashboard.
+- **HomePod** has no web-callable API. Apple's only control path is Home/Shortcuts on an Apple device; the realistic workaround is Home Assistant + HomeKit Controller on a LAN device.
 
-The current Discord widget is intentionally read-only (presence only). That works fully.
+What's here is what fully works from an iFrame — nothing half-built.
 
 ## Structure
 
@@ -97,7 +91,6 @@ xeneon-widgets/
 ├── stocks/
 ├── weather/
 ├── spotify/
-├── discord/
 ├── shared/             ← reserved for shared assets
 └── README.md
 ```
