@@ -28,7 +28,13 @@
 
   .meta{display:flex;flex-wrap:wrap;gap:18px;margin-top:34px;padding-top:22px;border-top:1px solid var(--line);font-size:11px;color:var(--dim);letter-spacing:.08em;text-transform:uppercase}
 
-  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;margin-top:62px}
+  .sectionhead{
+    display:flex;align-items:baseline;gap:12px;margin:62px 0 18px;
+  }
+  .sectionhead h2{font-size:20px;font-weight:800;letter-spacing:-.01em}
+  .sectionhead .count{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--dim);letter-spacing:.18em}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
 
   .card{
     background:var(--card);border:1px solid var(--line);border-radius:16px;
@@ -37,18 +43,12 @@
     position:relative;overflow:hidden;
   }
   .card:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.28)}
-  .card[data-wip]{opacity:.55}
-  .card[data-wip]::after{
-    content:"planned";position:absolute;top:12px;right:12px;
-    font-family:"JetBrains Mono",monospace;font-size:9px;
-    letter-spacing:.2em;text-transform:uppercase;color:var(--dim);
-    padding:3px 8px;border:1px solid var(--line);border-radius:999px;
-  }
 
-  .dot{width:10px;height:10px;border-radius:50%}
+  .dot{width:11px;height:11px;border-radius:50%}
+  .dot.square{border-radius:2px}
   .head{display:flex;align-items:center;gap:10px}
-  .name{font-size:18px;font-weight:800;letter-spacing:-.01em}
-  .desc{font-size:13px;color:var(--dim);line-height:1.5;flex:1}
+  .name{font-size:17px;font-weight:800;letter-spacing:-.01em}
+  .desc{font-size:12.5px;color:var(--dim);line-height:1.5;flex:1}
 
   .cta{
     display:flex;align-items:center;justify-content:space-between;
@@ -75,7 +75,7 @@
 
   <div class="kicker mono">xeneon-widgets · efe biskin</div>
   <h1>Widgets for the <em>Corsair Xeneon Edge.</em></h1>
-  <p class="lede">Tiny single-page widgets built for the Xeneon's iCUE iFrame panel. Each folder here is a self-contained HTML file — no build step, no framework, just drop the URL into iCUE.</p>
+  <p class="lede">Tiny single-page widgets built for the Xeneon's iCUE iFrame panel. Each folder is a self-contained HTML file — no framework, no build step, drop the URL into iCUE.</p>
 
   <div class="meta mono">
     <span>2560 × 720</span>
@@ -84,39 +84,79 @@
     <span>MIT</span>
   </div>
 
+  <div class="sectionhead">
+    <h2>Ambient</h2>
+    <span class="count">04 / ZERO-SETUP</span>
+  </div>
+  <section class="grid">
+    <a class="card" href="./clock/">
+      <div class="head"><span class="dot" style="background:#fff"></span><span class="name">Clock</span></div>
+      <p class="desc">Giant local-time display + world clock grid with timezone offsets. Edit cities right in the widget.</p>
+      <div class="cta"><span>/clock/</span><span class="go">Open →</span></div>
+    </a>
+
+    <a class="card" href="./pomodoro/">
+      <div class="head"><span class="dot" style="background:#78dba9"></span><span class="name">Pomodoro</span></div>
+      <p class="desc">Focus timer with animated ring, auto-advance through focus/short/long rounds. Spacebar to start/pause.</p>
+      <div class="cta"><span>/pomodoro/</span><span class="go">Open →</span></div>
+    </a>
+
+    <a class="card" href="./hackernews/">
+      <div class="head"><span class="dot square" style="background:#FF6600"></span><span class="name">Hacker News</span></div>
+      <p class="desc">Top/New/Best/Ask/Show feeds. Auto-refreshes every 5 minutes. Click straight through to any story.</p>
+      <div class="cta"><span>/hackernews/</span><span class="go">Open →</span></div>
+    </a>
+
+    <a class="card" href="./weather/">
+      <div class="head"><span class="dot" style="background:#6ec46e"></span><span class="name">Weather</span></div>
+      <p class="desc">Big-number current + 4-day forecast. Driven by the <strong style="color:#fff">Meteora API</strong>. 2560×720 optimized.</p>
+      <div class="cta"><span>/weather/</span><span class="go">Open →</span></div>
+    </a>
+  </section>
+
+  <div class="sectionhead">
+    <h2>Markets</h2>
+    <span class="count">02 / LIVE DATA</span>
+  </div>
+  <section class="grid">
+    <a class="card" href="./crypto/">
+      <div class="head"><span class="dot" style="background:#F7931A"></span><span class="name">Crypto</span></div>
+      <p class="desc">Watchlist with sparklines + 24h change. CoinGecko public API, no auth. Searchable add.</p>
+      <div class="cta"><span>/crypto/</span><span class="go">Open →</span></div>
+    </a>
+
+    <a class="card" href="./stocks/">
+      <div class="head"><span class="dot square" style="background:#ffd166"></span><span class="name">Stocks</span></div>
+      <p class="desc">Live ticker watchlist via Meteora's <code style="font-size:.85em">/v1/quotes</code> endpoint. Yahoo + Stooq fallback.</p>
+      <div class="cta"><span>/stocks/</span><span class="go">Open →</span></div>
+    </a>
+  </section>
+
+  <div class="sectionhead">
+    <h2>Accounts</h2>
+    <span class="count">02 / REQUIRES LOGIN</span>
+  </div>
   <section class="grid">
     <a class="card" href="./spotify/">
       <div class="head"><span class="dot" style="background:#1DB954"></span><span class="name">Spotify</span></div>
-      <p class="desc">Now-playing + transport controls for your Spotify account. OAuth implicit grant, no server needed. Polls every 4s, smooth progress tick.</p>
+      <p class="desc">Now-playing + transport controls. OAuth implicit grant, polls /me/player every 4s with smooth progress tick.</p>
       <div class="cta"><span>/spotify/</span><span class="go">Open →</span></div>
     </a>
 
     <a class="card" href="./discord/">
       <div class="head"><span class="dot" style="background:#5865F2"></span><span class="name">Discord</span></div>
-      <p class="desc">Live Discord presence — avatar, status, current game, custom status, and Spotify now-playing if Discord sees it. Powered by Lanyard.</p>
+      <p class="desc">Live presence via Lanyard — status, current activity, and Spotify now-playing. Read-only by design.</p>
       <div class="cta"><span>/discord/</span><span class="go">Open →</span></div>
-    </a>
-
-    <a class="card" href="./apple-music/">
-      <div class="head"><span class="dot" style="background:#FA2D48"></span><span class="name">Apple Music</span></div>
-      <p class="desc">Paste any Apple Music share URL — song, album, playlist, or radio station — and embed it. Honest HomePod note included.</p>
-      <div class="cta"><span>/apple-music/</span><span class="go">Open →</span></div>
-    </a>
-
-    <a class="card" href="./weather/">
-      <div class="head"><span class="dot" style="background:#6ec46e"></span><span class="name">Weather</span></div>
-      <p class="desc">Big number + 4-day forecast driven by the <strong style="color:#fff">Meteora API</strong>. Optimized for the 2560×720 Xeneon panel. URL-configurable.</p>
-      <div class="cta"><span>/weather/</span><span class="go">Open →</span></div>
     </a>
   </section>
 
   <section class="setup">
     <h2>Point iCUE at a widget</h2>
     <ol>
-      <li>Serve this folder locally: <code>python -m http.server 5556</code> from the repo root.</li>
-      <li>Open iCUE → <code>Xeneon Edge</code> → <code>Widgets</code> → <code>iFrame</code>.</li>
-      <li>Paste the widget URL, e.g. <code>http://localhost:5556/spotify/</code>.</li>
-      <li>Or deploy to GitHub Pages / Cloudflare Pages and use the public URL from any device.</li>
+      <li>Serve this folder: <code>python -m http.server 5556</code> from the repo root.</li>
+      <li>In iCUE → <code>Xeneon Edge</code> → <code>Widgets</code> → <code>iFrame</code>.</li>
+      <li>Paste the widget URL, e.g. <code>http://localhost:5556/clock/</code>.</li>
+      <li>Or push the repo to GitHub Pages / Cloudflare Pages for a public URL.</li>
     </ol>
   </section>
 

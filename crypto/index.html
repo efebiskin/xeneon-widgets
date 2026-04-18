@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>Crypto · Xeneon Widget</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;700;900&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#000;
+    --ink:#fff;
+    --dim:#9a9a9a;
+    --line:rgba(255,255,255,.12);
+    --up:#5dd39e;
+    --down:#ff6b6b;
+    --accent:#F7931A; /* bitcoin gold */
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:var(--bg);color:var(--ink);font-family:"Archivo",system-ui,sans-serif;overflow:hidden;-webkit-font-smoothing:antialiased}
+  button{font-family:inherit;color:inherit;border:none;background:none;cursor:pointer}
+  input{font-family:inherit;color:inherit;background:none;border:none;outline:none}
+
+  .shell{position:fixed;inset:0;display:grid;grid-template-rows:auto 1fr auto;padding:2.5vmin 3vmin;gap:1.5vmin}
+  .mono{font-family:"JetBrains Mono",ui-monospace,monospace;letter-spacing:.04em}
+
+  .top{display:flex;justify-content:space-between;align-items:center}
+  .brand{display:flex;align-items:center;gap:10px;font-size:clamp(10px,1.3vmin,14px);letter-spacing:.18em;text-transform:uppercase;color:var(--dim)}
+  .brand em{font-style:normal;color:var(--ink);font-weight:800}
+  .dot{width:11px;height:11px;background:var(--accent);border-radius:50%}
+  .actions{display:flex;gap:10px;font-size:clamp(9px,1.1vmin,12px);letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+  .actions span{cursor:pointer}
+  .actions span:hover{color:#fff}
+
+  /* list */
+  .list{display:flex;flex-direction:column;gap:.8vmin;overflow-y:auto;padding-right:.4vmin;min-height:0}
+  .list::-webkit-scrollbar{width:6px}
+  .list::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:3px}
+
+  .coin{
+    display:grid;grid-template-columns:auto auto 1fr auto auto;gap:1.6vmin;
+    align-items:center;padding:1.4vmin 1.6vmin;
+    border:1px solid var(--line);border-radius:10px;
+    transition:border-color .15s;
+  }
+  .coin:hover{border-color:rgba(255,255,255,.25)}
+  .coin-icon{width:clamp(22px,3vmin,34px);height:clamp(22px,3vmin,34px);border-radius:50%;background:#222;object-fit:cover}
+  .coin-id{display:flex;flex-direction:column;min-width:0}
+  .coin-sym{font-weight:800;font-size:clamp(13px,1.8vmin,18px);letter-spacing:.02em;text-transform:uppercase}
+  .coin-name{font-size:clamp(10px,1.2vmin,13px);color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .coin-spark{width:clamp(80px,14vmin,160px);height:clamp(26px,3.6vmin,42px)}
+  .coin-price{font-family:"JetBrains Mono",monospace;font-weight:700;font-size:clamp(13px,1.7vmin,18px);text-align:right;font-variant-numeric:tabular-nums}
+  .coin-change{
+    font-family:"JetBrains Mono",monospace;font-size:clamp(10px,1.3vmin,13px);
+    padding:.4vmin 1vmin;border-radius:6px;font-weight:700;min-width:7ch;text-align:center;
+  }
+  .coin-change.up{color:var(--up);background:rgba(93,211,158,.08)}
+  .coin-change.down{color:var(--down);background:rgba(255,107,107,.08)}
+  .coin-delete{
+    cursor:pointer;color:var(--dim);font-family:"JetBrains Mono",monospace;font-size:11px;
+    opacity:0;transition:opacity .15s;
+  }
+  .coin:hover .coin-delete{opacity:1}
+  .coin-delete:hover{color:var(--down)}
+
+  .loading{display:flex;align-items:center;justify-content:center;color:var(--dim);font-size:13px;padding:40px 0;letter-spacing:.1em;text-transform:uppercase}
+  .loading::after{content:"";width:6px;height:6px;background:var(--accent);border-radius:50%;margin-left:8px;animation:pulse 1s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:.3}50%{opacity:1}}
+
+  .footer{display:flex;justify-content:space-between;align-items:center;font-family:"JetBrains Mono",monospace;font-size:clamp(9px,1.1vmin,12px);color:var(--dim);letter-spacing:.08em;text-transform:uppercase}
+
+  /* edit modal */
+  .edit{position:fixed;inset:0;background:rgba(0,0,0,.9);backdrop-filter:blur(12px);display:none;align-items:center;justify-content:center;z-index:100;padding:20px}
+  .edit.visible{display:flex}
+  .edit-panel{
+    width:min(100%,560px);background:#0b0b0b;border:1px solid var(--line);border-radius:14px;
+    padding:22px;display:flex;flex-direction:column;gap:14px;
+  }
+  .edit-panel h2{font-size:16px;font-weight:900;letter-spacing:-.01em;display:flex;justify-content:space-between;align-items:center}
+  .edit-panel h2 .x{cursor:pointer;color:var(--dim);font-weight:400;font-size:18px}
+  .edit-search{position:relative}
+  .edit-search input{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:8px;background:#000;font-size:13px;color:#fff}
+  .edit-search input:focus{border-color:var(--accent)}
+  .search-results{display:flex;flex-direction:column;gap:4px;max-height:260px;overflow-y:auto;margin-top:10px}
+  .sr{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:8px 12px;border-radius:6px;cursor:pointer;font-size:13px}
+  .sr:hover{background:rgba(255,255,255,.04)}
+  .sr img{width:22px;height:22px;border-radius:50%;background:#222}
+  .sr small{color:var(--dim);font-family:"JetBrains Mono",monospace;font-size:11px;text-transform:uppercase}
+  .cur-list{display:flex;flex-direction:column;gap:4px;margin-top:8px;max-height:180px;overflow-y:auto}
+  .cur-item{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:8px 12px;border:1px solid var(--line);border-radius:6px;font-size:12px}
+  .cur-item img{width:20px;height:20px;border-radius:50%;background:#222}
+  .cur-item .del{cursor:pointer;color:#ff9f9f;font-family:"JetBrains Mono",monospace;font-size:11px}
+  .cur-item .del:hover{color:#ff6b6b}
+  .edit-actions{display:flex;gap:8px;justify-content:flex-end;border-top:1px solid var(--line);padding-top:12px;margin-top:4px}
+  .btn{padding:9px 14px;border:1px solid var(--line);border-radius:8px;font-size:12px;cursor:pointer}
+  .btn-primary{background:#fff;color:#000;border-color:#fff;font-weight:700}
+  .btn:hover{background:rgba(255,255,255,.04)}
+  .btn-primary:hover{background:#ddd}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="top">
+    <div class="brand"><span class="dot"></span><span>Xeneon · <em>Crypto</em></span></div>
+    <div class="actions">
+      <span id="editBtn">EDIT</span>
+      <span id="refreshBtn">↻ REFRESH</span>
+    </div>
+  </div>
+
+  <div class="list" id="list"><div class="loading">LOADING</div></div>
+
+  <div class="footer">
+    <span id="status">Powered by CoinGecko · free tier</span>
+    <span id="updated">—</span>
+  </div>
+</div>
+
+<!-- edit -->
+<div class="edit" id="edit">
+  <div class="edit-panel">
+    <h2>Edit watchlist <span class="x" id="closeBtn">✕</span></h2>
+    <div>
+      <div style="font-size:10px;letter-spacing:.18em;color:var(--dim);text-transform:uppercase;margin-bottom:6px">Currently tracking</div>
+      <div class="cur-list" id="curList"></div>
+    </div>
+    <div>
+      <div style="font-size:10px;letter-spacing:.18em;color:var(--dim);text-transform:uppercase;margin-bottom:6px">Search &amp; add</div>
+      <div class="edit-search">
+        <input id="searchInput" placeholder="Search coin (e.g. bitcoin, solana)" autocomplete="off" />
+      </div>
+      <div class="search-results" id="searchResults"></div>
+    </div>
+    <div class="edit-actions">
+      <button class="btn" id="resetBtn">Reset to defaults</button>
+      <button class="btn btn-primary" id="doneBtn">Done</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const CG = "https://api.coingecko.com/api/v3";
+  const STORAGE = "xw.crypto.ids";
+  const DEFAULTS = ["bitcoin","ethereum","solana","cardano","dogecoin"];
+  const CURRENCY = "usd";
+  const REFRESH_MS = 60 * 1000;
+
+  const $ = s => document.querySelector(s);
+  const load = () => {
+    try {
+      const v = JSON.parse(localStorage.getItem(STORAGE));
+      if (Array.isArray(v) && v.length) return v;
+    } catch(_) {}
+    return DEFAULTS;
+  };
+  const save = ids => localStorage.setItem(STORAGE, JSON.stringify(ids));
+  let ids = load();
+
+  const fmtPrice = p => {
+    if (p >= 1000) return p.toLocaleString("en-US",{maximumFractionDigits:0});
+    if (p >= 1) return p.toLocaleString("en-US",{maximumFractionDigits:2});
+    if (p >= 0.01) return p.toLocaleString("en-US",{maximumFractionDigits:4});
+    return p.toLocaleString("en-US",{maximumFractionDigits:6});
+  };
+  const fmtPct = p => (p >= 0 ? "+" : "") + p.toFixed(2) + "%";
+
+  const sparkPath = (pts, w, h) => {
+    if (!pts || pts.length < 2) return "";
+    const min = Math.min(...pts), max = Math.max(...pts);
+    const range = max - min || 1;
+    const dx = w / (pts.length - 1);
+    return pts.map((v,i) => {
+      const x = (i * dx).toFixed(2);
+      const y = (h - ((v - min) / range) * h).toFixed(2);
+      return (i === 0 ? "M" : "L") + x + "," + y;
+    }).join(" ");
+  };
+
+  const renderRow = c => {
+    const up = (c.price_change_percentage_24h || 0) >= 0;
+    const color = up ? "#5dd39e" : "#ff6b6b";
+    const sw = 160, sh = 42;
+    const sparks = c.sparkline_in_7d?.price || [];
+    const path = sparkPath(sparks, sw, sh);
+    return `
+      <div class="coin" data-id="${c.id}">
+        <img class="coin-icon" src="${c.image}" alt="" loading="lazy" />
+        <div class="coin-id">
+          <span class="coin-sym">${c.symbol}</span>
+          <span class="coin-name">${c.name}</span>
+        </div>
+        <svg class="coin-spark" viewBox="0 0 ${sw} ${sh}" preserveAspectRatio="none">
+          <path d="${path}" stroke="${color}" stroke-width="1.6" fill="none" stroke-linejoin="round" stroke-linecap="round"/>
+        </svg>
+        <span class="coin-price">$${fmtPrice(c.current_price)}</span>
+        <span class="coin-change ${up ? 'up' : 'down'}">${fmtPct(c.price_change_percentage_24h || 0)}</span>
+      </div>`;
+  };
+
+  const load_ = async () => {
+    if (!ids.length){
+      $("#list").innerHTML = `<div class="loading" style="color:var(--dim)">NO COINS — TAP EDIT TO ADD</div>`;
+      return;
+    }
+    try {
+      const url = `${CG}/coins/markets?vs_currency=${CURRENCY}&ids=${ids.join(",")}&order=market_cap_desc&sparkline=true&price_change_percentage=24h`;
+      const r = await fetch(url);
+      if (!r.ok){
+        if (r.status === 429){
+          $("#list").innerHTML = `<div class="loading" style="color:#ff9f9f">RATE LIMITED · retrying in 60s</div>`;
+          return;
+        }
+        throw new Error(r.status);
+      }
+      const data = await r.json();
+      // preserve user's order
+      const byId = Object.fromEntries(data.map(c => [c.id, c]));
+      const ordered = ids.map(id => byId[id]).filter(Boolean);
+      $("#list").innerHTML = ordered.map(renderRow).join("") || `<div class="loading">NO DATA</div>`;
+      $("#updated").textContent = `UPDATED ${new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}`;
+    } catch(e){
+      $("#list").innerHTML = `<div class="loading" style="color:#ff9f9f">ERROR: ${e.message}</div>`;
+    }
+  };
+
+  // edit modal
+  const renderCurList = () => {
+    const list = $("#curList");
+    list.innerHTML = "";
+    ids.forEach(id => {
+      const div = document.createElement("div");
+      div.className = "cur-item";
+      div.innerHTML = `<img src="https://assets.coingecko.com/coins/images/1/small/bitcoin.png" onerror="this.style.display='none'"/><span>${id}</span><span class="del" data-id="${id}">REMOVE</span>`;
+      list.appendChild(div);
+    });
+    list.querySelectorAll(".del").forEach(el => {
+      el.onclick = () => { ids = ids.filter(x => x !== el.dataset.id); save(ids); renderCurList(); };
+    });
+  };
+
+  let searchTimer = null;
+  const doSearch = async q => {
+    if (!q.trim()){ $("#searchResults").innerHTML = ""; return; }
+    try {
+      const r = await fetch(`${CG}/search?query=${encodeURIComponent(q)}`);
+      const data = await r.json();
+      const coins = (data.coins || []).slice(0, 10);
+      $("#searchResults").innerHTML = coins.map(c => `
+        <div class="sr" data-id="${c.id}">
+          <img src="${c.thumb}" />
+          <span><strong>${c.name}</strong> <small>${c.symbol}</small></span>
+          <span style="color:var(--dim);font-size:11px">#${c.market_cap_rank || "—"}</span>
+        </div>`).join("");
+      $("#searchResults").querySelectorAll(".sr").forEach(el => {
+        el.onclick = () => {
+          if (!ids.includes(el.dataset.id)) { ids.push(el.dataset.id); save(ids); renderCurList(); }
+        };
+      });
+    } catch(e){
+      $("#searchResults").innerHTML = `<div style="color:#ff9f9f;font-size:12px;padding:8px">Search failed: ${e.message}</div>`;
+    }
+  };
+
+  $("#editBtn").onclick = () => { $("#edit").classList.add("visible"); renderCurList(); };
+  $("#closeBtn").onclick = $("#doneBtn").onclick = () => { $("#edit").classList.remove("visible"); load_(); };
+  $("#resetBtn").onclick = () => { ids = [...DEFAULTS]; save(ids); renderCurList(); };
+  $("#refreshBtn").onclick = () => load_();
+  $("#searchInput").oninput = e => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => doSearch(e.target.value), 300);
+  };
+
+  load_();
+  setInterval(load_, REFRESH_MS);
+})();
+</script>
+</body>
+</html>
