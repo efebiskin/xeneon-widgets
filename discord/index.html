@@ -143,12 +143,15 @@
 
   /* error */
   .error{
-    position:absolute;top:14px;left:14px;right:14px;
-    padding:10px 14px;background:rgba(242,63,67,.15);border:1px solid rgba(242,63,67,.45);
-    border-radius:8px;font-size:12px;color:#ffb0b2;
+    position:fixed;top:14px;left:14px;right:14px;z-index:100;
+    padding:12px 14px;background:rgba(242,63,67,.18);border:1px solid rgba(242,63,67,.55);
+    border-radius:10px;font-size:12px;color:#ffb0b2;line-height:1.5;
     display:none;
+    box-shadow:0 10px 30px rgba(0,0,0,.5);
   }
   .error.visible{display:block}
+  .error a{color:#fff;font-weight:700;text-decoration:underline;text-underline-offset:2px}
+  .error .title{display:block;color:#fff;font-weight:700;margin-bottom:4px;letter-spacing:.02em;font-size:13px}
 
   .hidden{display:none !important}
 
@@ -167,6 +170,7 @@
 </head>
 <body>
 <div class="shell">
+  <div id="error" class="error"></div>
   <!-- LOGIN -->
   <section id="login" class="login">
     <h1><span class="brand-dot"></span> Discord Presence</h1>
@@ -193,8 +197,6 @@
 
   <!-- PRESENCE -->
   <section id="presence" class="card hidden">
-    <div id="error" class="error"></div>
-
     <div class="top">
       <span class="label" id="statusLabel">Offline</span>
       <span class="refresh" id="refreshBtn">Refresh</span>
@@ -249,10 +251,11 @@
   let spotifyTickRAF = null;
 
   // ---------- helpers ----------
-  const showError = msg => {
-    err.textContent = msg;
+  const showError = (msg, {sticky=false, html=false} = {}) => {
+    if (html) err.innerHTML = msg;
+    else err.textContent = msg;
     err.classList.add("visible");
-    setTimeout(() => err.classList.remove("visible"), 4500);
+    if (!sticky) setTimeout(() => err.classList.remove("visible"), 6000);
   };
   const clearError = () => err.classList.remove("visible");
 
@@ -406,7 +409,22 @@
       const r = await fetch(LANYARD_HTTP + id);
       const body = await r.json();
       if (!body.success){
-        showError(body.error?.message || "Lanyard rejected that ID — are you in discord.gg/lanyard?");
+        const code = body.error?.code;
+        if (code === "user_not_monitored"){
+          showError(
+            `<span class="title">You're not in the Lanyard server yet</span>
+             Lanyard only tracks Discord users who are members of their server — that's how it reads your presence. Join <a href="https://discord.gg/lanyard" target="_blank" rel="noreferrer">discord.gg/lanyard</a>, then click Connect again. (Stay in the server — if you leave, the widget stops working.)`,
+            {sticky: true, html: true}
+          );
+        } else if (code === "invalid_id" || code === "user_not_found"){
+          showError(
+            `<span class="title">That ID doesn't match a Discord account</span>
+             Double-check you right-clicked <em>your own</em> avatar in Discord and picked <strong>Copy User ID</strong>, not Copy Username. IDs are all digits, 17–19 long.`,
+            {sticky: true, html: true}
+          );
+        } else {
+          showError(body.error?.message || "Lanyard rejected that ID.", {sticky: true});
+        }
         return null;
       }
       return body.data;
